@@ -1,0 +1,58 @@
+version: "2"
+
+services:
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.8
+    restart: always
+    ports:
+      - "2181:2181"
+    volumes:
+      - "zookeeper_data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+    image: docker.io/bitnami/kafka:3.4
+    restart: always
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "19092:19092"
+    volumes:
+      - "kafka_data:/bitnami"
+    environment:
+      # BITNAMI_DEBUG: "yes" - leaving this for future debugging efforts
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_BROKER_ID: -1
+      KAFKA_ENABLE_KRAFT: "false"
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+  profile:
+    build: profile/
+    container_name: profiles
+    restart: always
+    environment:
+      BUS_ADDRESS: "kafka:9092"
+      PROFILE_TOPIC: profiles
+    depends_on:
+      - kafka
+  consultation:
+    build: consultation/
+    container_name: consultations
+    restart: always
+    environment:
+      BUS_ADDRESS: "kafka:9092"
+      PROFILE_TOPIC: profiles
+    depends_on:
+      - kafka
+
+volumes:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local

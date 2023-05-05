@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
@@ -17,7 +18,18 @@ type Consumer struct {
 // Start from the beginning of the queue that this client knows about.
 const startOffset = -2
 
+var (
+	BadAddress = errors.New("poorly formed address")
+	BadTopic   = errors.New("poorly formed topic")
+)
+
 func NewConsumer(address, topic string) (*Consumer, error) {
+	if address == "" {
+		return nil, BadAddress
+	}
+	if topic == "" {
+		return nil, BadTopic
+	}
 	dialer := &kafka.Dialer{
 		Timeout:   10 * time.Second,
 		DualStack: true,
@@ -47,6 +59,7 @@ func NewConsumer(address, topic string) (*Consumer, error) {
 
 func (c *Consumer) Read(count int) ([][]byte, error) {
 	data := make([][]byte, count)
+
 	for i := 0; i < count; i++ {
 		message, err := c.Reader.ReadMessage(context.Background())
 		if err != nil {

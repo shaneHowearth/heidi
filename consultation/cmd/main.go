@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	// Message Bus.
 	busAddr, ok := os.LookupEnv("BUS_ADDRESS")
 	if !ok {
 		panic("BUS_ADDRESS has not been set")
@@ -18,6 +19,7 @@ func main() {
 
 	// BUS_ADDRESS must be LOCATION:PORT for this instance.
 	// We cannot check if this is an IP, or a DNS name.
+	// TODO handle ipv6.
 	addressInfo := strings.Split(busAddr, ":")
 	if len(addressInfo) != 2 {
 		panic("BUS_ADDRESS must be in the form LOCATION:PORT")
@@ -34,6 +36,8 @@ func main() {
 		panic("PROFILE_TOPIC has not been set")
 	}
 
+
+	// Create Bus consumer.
 	productConsumer, err := kafka.NewConsumer(busAddr, profileTopic)
 	if err != nil {
 		log.Print("Unable to create new bus")
